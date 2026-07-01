@@ -10,6 +10,12 @@ import dotenv
 
 dotenv.load_dotenv(override=True)
 
+# If OPENROUTER_API_KEY is present, make Cognee work out-of-the-box for
+# Hermes-style graph + vector memory while preserving any explicit env overrides.
+from cognee.hermes_openrouter import apply_openrouter_defaults
+
+apply_openrouter_defaults()
+
 # NOTE: Log level can be set with the LOG_LEVEL env variable
 from cognee.shared.logging_utils import setup_logging
 

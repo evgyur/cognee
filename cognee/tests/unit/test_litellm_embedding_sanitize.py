@@ -55,3 +55,35 @@ async def test_embed_text_filters_invalid_inputs(monkeypatch):
     assert result[1] == UNIQUE_B
     assert result[2] == UNIQUE_C
     assert result[4] == UNIQUE_E
+
+
+@pytest.mark.asyncio
+async def test_openrouter_embedding_uses_float_encoding_and_omits_dimensions(monkeypatch):
+    monkeypatch.setenv("MOCK_EMBEDDING", "false")
+
+    captured_kwargs = {}
+
+    class _Resp:
+        data = [{"embedding": [1.0, 2.0, 3.0, 4.0]}]
+
+    async def fake_aembedding(**kwargs):
+        captured_kwargs.update(kwargs)
+        return _Resp()
+
+    import cognee.infrastructure.databases.vector.embeddings.LiteLLMEmbeddingEngine as mod
+
+    monkeypatch.setattr(mod.litellm, "aembedding", fake_aembedding)
+
+    engine = LiteLLMEmbeddingEngine(
+        model="openai/text-embedding-3-large",
+        provider="openai",
+        dimensions=4,
+        api_key="test-openrouter-key",
+        endpoint="https://openrouter.ai/api/v1",
+    )
+
+    result = await engine.embed_text(["hello"])
+
+    assert result == [[1.0, 2.0, 3.0, 4.0]]
+    assert captured_kwargs["encoding_format"] == "float"
+    assert "dimensions" not in captured_kwargs

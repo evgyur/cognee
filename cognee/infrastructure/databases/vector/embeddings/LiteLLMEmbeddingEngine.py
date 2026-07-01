@@ -156,8 +156,15 @@ class LiteLLMEmbeddingEngine(EmbeddingEngine):
                         "api_base": self.endpoint,
                         "api_version": self.api_version,
                     }
-                    # Pass through target embedding dimensions when supported
-                    if self.dimensions is not None:
+                    # OpenRouter rejects LiteLLM's default base64 embedding encoding.
+                    # Force float vectors there and avoid forwarding OpenAI-only
+                    # dimensions to compatible routers unless they explicitly support it.
+                    is_openrouter_endpoint = bool(
+                        self.endpoint and "openrouter" in self.endpoint.lower()
+                    )
+                    if is_openrouter_endpoint:
+                        embedding_kwargs["encoding_format"] = "float"
+                    elif self.dimensions is not None:
                         embedding_kwargs["dimensions"] = self.dimensions
 
                     # Ensure each attempt does not hang indefinitely

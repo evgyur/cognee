@@ -9,7 +9,7 @@ memory layer with:
 - local Kuzu graph store
 - local LanceDB vector store
 
-No Human20 gateway, proxy, or shared key is required.
+No shared gateway, proxy, or bundled key is required.
 
 ## Quick start
 
@@ -25,6 +25,17 @@ cp .env.openrouter.template .env
 # edit .env and set OPENROUTER_API_KEY to your own key
 
 python examples/hermes_openrouter_memory.py
+```
+
+The template also sets `COGNEE_HERMES_INSTALL_SKILL=true`. On first import,
+Cognee installs/updates a public-safe Hermes skill at
+`$HERMES_HOME/skills/cognee-memory-router/SKILL.md`. That skill teaches Hermes
+the same ingest rules: default deny, curated documents only, no raw private
+chat/session dumps, no secrets, and ephemeral hook context stays in-turn only.
+You can also install it explicitly:
+
+```bash
+python -m cognee.hermes_installer
 ```
 
 You can also skip the template and set only one environment variable:
@@ -50,18 +61,46 @@ EMBEDDING_ENDPOINT=https://openrouter.ai/api/v1
 EMBEDDING_DIMENSIONS=3072
 
 COGNEE_SKIP_CONNECTION_TEST=true
+COGNEE_HERMES_INSTALL_SKILL=true
 ```
 
-## Hermes usage pattern
+## Memory routing policy
+
+The fork ships a small policy module, `cognee.hermes_memory_policy`, that should
+be used before `cognee.add()` in Hermes flows.
+
+It routes candidates into:
+
+```text
+ignore | hermes_memory | skill | session_only | cognee | ask_user | reject
+```
+
+Cognee accepts only curated, durable documents after redaction. Raw private
+chat, session dumps, secrets, credentials, temporary TODO/progress, and
+ephemeral hook context are not persisted to Cognee.
+
+For concierge/gateway hooks, the rule is **context-first but ephemeral**:
+inspect current/recent message context, reply chains, entities, or media before
+asking the user to resend; use that only for the current turn unless a cleaned,
+reviewed document is created for indexing.
 
 A Hermes agent can use this fork directly from Python:
 
 ```python
 import asyncio
 import cognee
+from cognee.hermes_memory_policy import MemoryCandidate, MemoryTarget, classify
 
 async def main():
-    await cognee.add(["Hermes can use Cognee as graph + vector memory."])
+    candidate = MemoryCandidate(
+        text="Hermes can use Cognee as graph + vector memory.",
+        source_type="documentation",
+        sensitivity="public",
+        metadata={"title": "Hermes Cognee memory"},
+    )
+    decision = classify(candidate)
+    if decision.target is MemoryTarget.COGNEE:
+        await cognee.add([decision.cleaned_text])
     await cognee.cognify()
     await asyncio.sleep(90)  # cognify starts an async pipeline
     print(await cognee.search("What can Hermes use Cognee for?"))

@@ -53,4 +53,15 @@ def apply_openrouter_defaults() -> bool:
     for key, value in defaults.items():
         os.environ.setdefault(key, value)
 
+    # Optional Hermes integration install. The fork's .env template enables this
+    # so a Hermes user gets the memory-router policy skill on first run, while
+    # plain library users can omit/disable the env var and get no filesystem writes.
+    try:
+        from cognee.hermes_installer import maybe_install_hermes_skill
+
+        maybe_install_hermes_skill()
+    except Exception:
+        # Never break Cognee import because a Hermes home is unwritable/missing.
+        pass
+
     return True

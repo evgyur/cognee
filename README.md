@@ -58,7 +58,7 @@ Cognee is the open-source AI memory platform that gives AI agents persistent lon
 </p>
 </div>
 
-> **Hermes/OpenRouter fork note:** this fork includes a one-key OpenRouter setup for local Hermes graph + vector memory. Copy `.env.openrouter.template` to `.env`, set `OPENROUTER_API_KEY`, then run `python examples/hermes_openrouter_memory.py`. Details: [HERMES_OPENROUTER.md](HERMES_OPENROUTER.md).
+> **Hermes/OpenRouter fork note:** this fork includes a one-key OpenRouter setup for local Hermes graph + vector memory. Copy `.env.openrouter.template` to `.env`, set `OPENROUTER_API_KEY`, then run `python examples/hermes_openrouter_memory.py`. It also installs a public-safe Hermes `cognee-memory-router` skill with default-deny ingest policy: curated docs only, no raw private chat/session dumps, no secrets, and ephemeral hook context only for the current turn. Details: [HERMES_OPENROUTER.md](HERMES_OPENROUTER.md).
 
 📄 Read the research paper: [Optimizing the Interface Between Knowledge Graphs and LLMs for Complex Reasoning](https://arxiv.org/abs/2505.24478) — Markovic et al., 2025
 
